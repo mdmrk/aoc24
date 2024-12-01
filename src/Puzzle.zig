@@ -1,4 +1,4 @@
 const std = @import("std");
 
 problem: []const u8,
-run: *const fn (args: *std.process.ArgIterator) void,
+run: *const fn (alloc: std.mem.Allocator) anyerror!void,

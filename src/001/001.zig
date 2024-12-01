@@ -1,6 +1,7 @@
 const Puzzle = @import("../Puzzle.zig");
 const Self = @This();
 const std = @import("std");
+const input = @embedFile("input.txt");
 
 const problem =
     \\ --- Day 1: Historian Hysteria ---
@@ -46,7 +47,45 @@ const problem =
     \\ Your actual left and right lists contain many location IDs. What is the total distance between your lists?
 ;
 
-fn run(_: *std.process.ArgIterator) void {}
+fn run(alloc: std.mem.Allocator) !void {
+    const solution: usize = 3569916;
+    const stdout = std.io.getStdOut().writer();
+    var total_distance: usize = 0;
+    var buffer: [input.len]u8 = undefined;
+    var list_size: usize = 0;
+
+    std.mem.copyForwards(u8, &buffer, input);
+    var iter = std.mem.tokenizeAny(u8, &buffer, " \n\t\t");
+
+    while (iter.next()) |_| {
+        list_size += 1;
+    }
+    list_size /= 2;
+
+    var list_one = try alloc.alloc(isize, list_size);
+    defer alloc.free(list_one);
+    var list_two = try alloc.alloc(isize, list_size);
+    defer alloc.free(list_two);
+    iter.reset();
+
+    var i: usize = 0;
+    while (iter.next()) |first| : (i += 1) {
+        if (iter.next()) |second| {
+            const num_one = try std.fmt.parseInt(isize, first, 10);
+            const num_two = try std.fmt.parseInt(isize, second, 10);
+            list_one[i] = num_one;
+            list_two[i] = num_two;
+        }
+    }
+    std.mem.sort(isize, list_one, {}, std.sort.asc(isize));
+    std.mem.sort(isize, list_two, {}, std.sort.asc(isize));
+    for (list_one, list_two) |f, s| {
+        const distance = @abs(f - s);
+        total_distance += distance;
+    }
+    try stdout.print("total distance: {}\n", .{total_distance});
+    std.debug.assert(total_distance == solution);
+}
 
 pub fn init() Puzzle {
     return .{
