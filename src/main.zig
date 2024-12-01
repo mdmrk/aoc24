@@ -68,5 +68,6 @@ pub fn main() !void {
     if (parsed_args.print_problem) {
         return try stdout.print("{s}\n", .{puzzle.problem});
     }
-    try puzzle.run(alloc);
+    try puzzle.part_one(alloc);
+    try puzzle.part_two(alloc);
 }

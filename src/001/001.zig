@@ -47,7 +47,7 @@ const problem =
     \\ Your actual left and right lists contain many location IDs. What is the total distance between your lists?
 ;
 
-fn run(alloc: std.mem.Allocator) !void {
+fn part_one(alloc: std.mem.Allocator) !void {
     const solution: usize = 3569916;
     const stdout = std.io.getStdOut().writer();
     var total_distance: usize = 0;
@@ -87,9 +87,58 @@ fn run(alloc: std.mem.Allocator) !void {
     std.debug.assert(total_distance == solution);
 }
 
+fn part_two(alloc: std.mem.Allocator) !void {
+    const solution: usize = 26407426;
+    const stdout = std.io.getStdOut().writer();
+    var buffer: [input.len]u8 = undefined;
+    var list_size: usize = 0;
+
+    std.mem.copyForwards(u8, &buffer, input);
+    var iter = std.mem.tokenizeAny(u8, &buffer, " \n\t\t");
+
+    while (iter.next()) |_| {
+        list_size += 1;
+    }
+    list_size /= 2;
+
+    var list_one = try alloc.alloc(usize, list_size);
+    defer alloc.free(list_one);
+    var list_two = try alloc.alloc(usize, list_size);
+    defer alloc.free(list_two);
+    iter.reset();
+
+    var i: usize = 0;
+    while (iter.next()) |first| : (i += 1) {
+        if (iter.next()) |second| {
+            const num_one = try std.fmt.parseInt(usize, first, 10);
+            const num_two = try std.fmt.parseInt(usize, second, 10);
+            list_one[i] = num_one;
+            list_two[i] = num_two;
+        }
+    }
+    std.mem.sort(usize, list_one, {}, std.sort.asc(usize));
+    std.mem.sort(usize, list_two, {}, std.sort.asc(usize));
+    var sim_score: usize = 0;
+    for (list_one) |num| {
+        var appears: usize = 0;
+
+        for (list_two) |m| {
+            if (m > num) {
+                break;
+            } else if (num == m) {
+                appears += 1;
+            }
+        }
+        sim_score += (appears * num);
+    }
+    try stdout.print("similarity score: {}\n", .{sim_score});
+    std.debug.assert(sim_score == solution);
+}
+
 pub fn init() Puzzle {
     return .{
         .problem = problem,
-        .run = run,
+        .part_one = part_one,
+        .part_two = part_two,
     };
 }
