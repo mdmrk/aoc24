@@ -1,6 +1,6 @@
 aoc24 - Advent of Code 2024
 
-Coded in Zig 0.13.0
+Written in Zig 0.13.0
 
 Usage: aoc24 <day> [options]
           
