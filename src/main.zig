@@ -27,7 +27,7 @@ fn parse_args(args: *std.process.ArgIterator) !Args {
         } else if (std.mem.eql(u8, arg, "-p") or std.mem.eql(u8, arg, "--problem")) {
             print_problem = true;
         } else {
-            day = try std.fmt.parseInt(usize, arg, 10);
+            day = try std.fmt.parseUnsigned(usize, arg, 10);
         }
     }
     return .{
@@ -62,7 +62,7 @@ pub fn main() !void {
     }
 
     const day = parsed_args.day orelse return std.log.err("expected number (valid range: {} to {})", .{ 1, puzzles.len });
-    if (day > puzzles.len) {
+    if (day > puzzles.len or day == 0) {
         return std.log.err("{}: not a valid day (valid range: {} to {})", .{ day, 1, puzzles.len });
     }
     const puzzle = puzzles[day - 1];
