@@ -11,6 +11,7 @@ const Args = struct {
 const puzzles = [_]Puzzle{
     @import("001/001.zig").init(),
     @import("002/002.zig").init(),
+    @import("003/003.zig").init(),
 };
 
 fn parse_args(args: *std.process.ArgIterator) !Args {
