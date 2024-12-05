@@ -177,8 +177,7 @@ fn part_one(alloc: std.mem.Allocator) !void {
         pages += update[middle];
     }
     try stdout.print("pages: {}\n", .{pages});
-    _ = solution;
-    // std.debug.assert(solution == pages);
+    std.debug.assert(solution == pages);
 }
 
 fn part_two(alloc: std.mem.Allocator) !void {
