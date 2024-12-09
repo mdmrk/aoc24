@@ -1,5 +1,4 @@
 const Puzzle = @import("../Puzzle.zig");
-const Self = @This();
 const input = @embedFile("input.txt");
 const print = std.debug.print;
 const std = @import("std");
@@ -90,35 +89,105 @@ fn part_one(alloc: std.mem.Allocator) !void {
     try stdout.print("calibrations: {}\n", .{calibration});
 }
 
-pub fn generatePermutations(allocator: std.mem.Allocator, elements: []const u8, target_length: usize) ![][]const u8 {
-    const total = std.math.pow(usize, elements.len, target_length);
-    var result = std.ArrayList([]const u8).init(allocator);
-    errdefer {
-        for (result.items) |item| allocator.free(item);
-        result.deinit();
-    }
-    try result.ensureTotalCapacity(total);
-    var current = try allocator.alloc(u8, target_length);
-    defer allocator.free(current);
-    var i: usize = 0;
-    while (i < total) : (i += 1) {
-        var num = i;
-        var pos = target_length;
-        while (pos > 0) {
-            pos -= 1;
-            const idx = num % elements.len;
-            current[pos] = elements[idx];
-            num /= elements.len;
+pub fn PermutationIterator(comptime T: type) type {
+    return struct {
+        elements: []const T,
+        target_length: usize,
+        current: []T,
+        done: bool = false,
+
+        const Self = @This();
+
+        pub fn init(elements: []const T, target_length: usize, allocator: std.mem.Allocator) !Self {
+            const current = try allocator.alloc(T, target_length);
+            @memset(current, elements[0]);
+
+            return Self{
+                .elements = elements,
+                .target_length = target_length,
+                .current = current,
+            };
         }
-        const perm = try allocator.dupe(u8, current);
-        try result.append(perm);
-    }
-    return try result.toOwnedSlice();
+
+        pub fn deinit(self: *Self, allocator: std.mem.Allocator) void {
+            allocator.free(self.current);
+        }
+
+        pub fn next(self: *Self) ?[]const T {
+            if (self.done) return null;
+
+            const result = self.current;
+
+            var carry = true;
+            for (0..self.target_length) |i| {
+                if (carry) {
+                    const idx = (std.mem.indexOfScalar(T, self.elements, self.current[self.target_length - 1 - i]) orelse 0) + 1;
+                    if (idx < self.elements.len) {
+                        self.current[self.target_length - 1 - i] = self.elements[idx];
+                        carry = false;
+                        break;
+                    } else {
+                        self.current[self.target_length - 1 - i] = self.elements[0];
+                    }
+                }
+            }
+
+            self.done = carry;
+
+            return result;
+        }
+    };
 }
 
-fn part_two(_: std.mem.Allocator) !void {
+fn part_two(alloc: std.mem.Allocator) !void {
     const stdout = std.io.getStdOut().writer();
-    try stdout.print("calibrations: TODO\n", .{});
+    var iter = std.mem.tokenizeScalar(u8, input, '\n');
+    var calibration: usize = 0;
+
+    while (iter.next()) |test_row| {
+        var test_arr = std.ArrayList(usize).init(alloc);
+        defer test_arr.deinit();
+        var test_iter = std.mem.tokenizeScalar(u8, test_row, ':');
+        const test_value = try std.fmt.parseUnsigned(usize, test_iter.next() orelse unreachable, 10);
+        var equation = std.mem.tokenizeScalar(u8, test_iter.next() orelse unreachable, ' ');
+        while (equation.next()) |value| {
+            try test_arr.append(try std.fmt.parseUnsigned(usize, value, 10));
+        }
+        const values = test_arr.items;
+        const operators = [_]u8{ '+', '*', '|' };
+        var perm_iter = try PermutationIterator(u8).init(&operators, values.len - 1, alloc);
+        defer perm_iter.deinit(alloc);
+        // print("{any}\n", .{values});
+        blk: while (perm_iter.next()) |perm| {
+            // print("{s}\n", .{perm});
+            var result = values[0];
+            for (perm, 1..) |op, i| {
+                switch (op) {
+                    '+' => result += values[i],
+                    '*' => result *= values[i],
+                    '|' => {
+                        var pow: usize = 10;
+                        while (values[i] >= pow) : (pow *= 10) {
+                            if (pow > test_value) break;
+                        }
+                        if (pow > test_value) continue :blk;
+                        result = result * pow + values[i];
+                    },
+                    else => {},
+                }
+                if (result > test_value) {
+                    continue :blk;
+                }
+                // print("op: {c}, {} - ", .{ op, result });
+            }
+            if (result == test_value) {
+                calibration += test_value;
+                break;
+            }
+        }
+    }
+
+    try stdout.print("calibrations: {}\n", .{calibration});
 }
 
 pub fn init() Puzzle {
