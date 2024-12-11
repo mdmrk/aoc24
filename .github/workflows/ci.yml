@@ -1,8 +1,6 @@
 name: ci
-
 permissions:
   contents: write
-
 on:
   push:
     branches: [ "main" ]
@@ -25,7 +23,6 @@ jobs:
         run: |
           echo "date=$(date +'%Y%m%d')" >> "$GITHUB_OUTPUT"
           echo "commit_hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
-
   build:
     needs: build-info
     runs-on: ubuntu-latest
@@ -34,11 +31,15 @@ jobs:
         target: [
           { os: 'windows', arch: 'x86_64' },
           { os: 'windows', arch: 'aarch64' },
+          { os: 'windows', arch: 'x86' },
           { os: 'macos', arch: 'x86_64' },
           { os: 'macos', arch: 'aarch64' },
           { os: 'linux', arch: 'x86_64' },
           { os: 'linux', arch: 'aarch64' },
-          { os: 'linux', arch: 'x86' }
+          { os: 'linux', arch: 'x86' },
+          { os: 'linux', arch: 'arm' },
+          { os: 'linux', arch: 'riscv64' },
+          { os: 'linux', arch: 'powerpc64le' }
         ]
     steps:
       - uses: actions/checkout@v4
@@ -58,7 +59,6 @@ jobs:
         with:
           name: aoc24-${{ matrix.target.os }}-${{ matrix.target.arch }}
           path: zig-out/bin/aoc24${{ matrix.target.os == 'windows' && '.exe' || '' }}
-
   release:
     needs: [build-info, build]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -68,7 +68,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
-
       - name: Prepare Release Files
         run: |
           cd artifacts
@@ -81,7 +80,6 @@ jobs:
               (cd "$dir" && zip "../${dir%/}.zip" aoc24)
             fi
           done
-
       - name: Delete all existing releases
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -102,7 +100,6 @@ jobs:
             # Delete the tag
             curl -X DELETE -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/${{ github.repository }}/git/refs/tags/$release_tag"
           done
-
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
