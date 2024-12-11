@@ -19,6 +19,7 @@ const puzzles = [_]Puzzle{
     @import("008/008.zig").init(),
     @import("009/009.zig").init(),
     @import("010/010.zig").init(),
+    @import("011/011.zig").init(),
 };
 
 fn parse_args(args: *std.process.ArgIterator) !Args {

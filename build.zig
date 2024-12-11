@@ -22,7 +22,6 @@ fn getVersion(alloc: std.mem.Allocator) !struct { date: []const u8, commit: []co
 pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
-    const debug = optimize == .Debug;
     const version = getVersion(b.allocator) catch |err| {
         return std.log.err("Failed to get version info: {}", .{err});
     };
@@ -32,8 +31,7 @@ pub fn build(b: *std.Build) !void {
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
-        .strip = !debug,
-        .single_threaded = !debug,
+        .strip = optimize == .ReleaseFast,
     });
     const options = b.addOptions();
     options.addOption([]const u8, "version", b.fmt("{s}-{s}", .{ version.date, version.commit }));
